@@ -1,4 +1,17 @@
-// Handler functions for different query types
+export async function handleWeatherQuery(city: string): Promise<string> {
+  const apiKey = process.env.OPENWEATHER_API_KEY || 'demo';
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=imperial`;
+  
+  const response = await fetch(url);
+  const data = await response.json();
+  
+  if (response.status === 200) {
+    return `The weather in ${data.name} is ${data.weather[0].description} with a temperature of ${Math.round(data.main.temp)}°F`;
+  } else {
+    throw new Error(`Weather data not available for ${city}`);
+  }
+}
+
 export function handleShakespeareQuery(): string {
   return (
     "William Shakespeare (26 April 1564 - 23 April 1616) was an " +
@@ -47,7 +60,7 @@ export function handleCurrentMonthQuery(): string {
 }
 
 // Main query router
-export default function QueryProcessor(query: string): string {
+export default async function QueryProcessor(query: string): Promise<string> {
   const lowerQuery = query.toLowerCase();
 
   if (lowerQuery.includes("shakespeare")) {
@@ -56,6 +69,13 @@ export default function QueryProcessor(query: string): string {
 
   if (lowerQuery.includes("name")) {
     return handleNameQuery();
+  }
+
+  // Weather query - extract city name
+  const weatherMatch = lowerQuery.match(/what is the weather in (.+)/);
+  if (weatherMatch) {
+    const city = weatherMatch[1].trim();
+    return await handleWeatherQuery(city);
   }
 
   // Date/Time queries
